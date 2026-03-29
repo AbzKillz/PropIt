@@ -14,6 +14,7 @@ import ActivityPage from "./components/ActivityPage";
 import ProPage from "./components/ProPage";
 import MessagesPage from "./components/MessagesPage";
 import PlacesFeedPage from "./components/PlacesFeedPage";
+import UserProfilePage from "./components/UserProfilePage";
 import BottomNav from "./components/BottomNav";
 
 // Protected Route Component
@@ -108,6 +109,17 @@ function AppRoutes() {
         <ProtectedRoute>
           <MessagesPage />
         </ProtectedRoute>
+      } />
+
+      <Route path="/messages/new/:recipientId" element={
+        <ProtectedRoute>
+          <MessagesPage />
+        </ProtectedRoute>
+      } />
+
+      {/* User Profiles */}
+      <Route path="/user/:userId" element={
+        <UserProfilePage />
       } />
 
       {/* Places Stayed Feed */}

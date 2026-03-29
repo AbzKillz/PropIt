@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { Heart, MessageCircle, Share2, Bookmark, Plus, BadgeCheck, Crown, MapPin, Bed, Bath, Square, Send } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { Heart, MessageCircle, Share2, Bookmark, Plus, BadgeCheck, Crown, MapPin, Bed, Bath, Square, Send, Mail } from 'lucide-react';
 import { postsAPI, wishlistAPI } from '../services/api';
 import { useAuth } from '../context/AuthContext';
 import CommentsSheet from './CommentsSheet';
@@ -24,6 +25,7 @@ const SAMPLE_IMAGES = [
 ];
 
 const FeedItem = ({ post, index, onLike, onSave, onComment, onFollow }) => {
+  const navigate = useNavigate();
   const { user, isAuthenticated } = useAuth();
   const [liked, setLiked] = useState(false);
   const [saved, setSaved] = useState(false);
@@ -31,6 +33,21 @@ const FeedItem = ({ post, index, onLike, onSave, onComment, onFollow }) => {
   const [likesCount, setLikesCount] = useState(post.likes || 0);
   const [showComments, setShowComments] = useState(false);
   const [showInquiry, setShowInquiry] = useState(false);
+
+  const handleProfileClick = () => {
+    if (post.author_id) {
+      navigate(`/user/${post.author_id}`);
+    }
+  };
+
+  const handleEnquire = () => {
+    if (!isAuthenticated) {
+      navigate('/login');
+      return;
+    }
+    // Navigate to messages with this user
+    navigate(`/messages/new/${post.author_id}`);
+  };
   
   useEffect(() => {
     if (user && post.liked_by) {
@@ -142,9 +159,23 @@ const FeedItem = ({ post, index, onLike, onSave, onComment, onFollow }) => {
       </div>
 
       {/* Bottom Info Overlay */}
-      <div className="absolute bottom-0 left-0 w-full p-4 pb-24 text-white z-10" data-testid="feed-info">
-        {/* Author Info */}
-        <div className="flex items-center gap-2 mb-3">
+      <div className="absolute bottom-0 left-0 w-full p-4 pb-28 text-white z-10" data-testid="feed-info">
+        {/* Author Info - Clickable */}
+        <button 
+          onClick={handleProfileClick}
+          className="flex items-center gap-2 mb-3 hover:opacity-80 transition-opacity"
+          data-testid="author-profile-link"
+        >
+          <div className={`w-8 h-8 rounded-full border-2 overflow-hidden ${
+            post.author_role === 'buyer' ? 'border-[#7B9681]' : 
+            post.author_role === 'agent' ? 'border-[#4A90E2]' : 'border-[#C89F82]'
+          }`}>
+            <img 
+              src={post.author_image || `https://ui-avatars.com/api/?name=${post.author_name}&background=7B9681&color=fff`}
+              alt={post.author_name}
+              className="w-full h-full object-cover"
+            />
+          </div>
           <span className="font-semibold text-sm">{post.author_name}</span>
           {(post.author_role === 'agent' || post.is_verified) && (
             <BadgeCheck className="w-4 h-4 text-[#4A90E2]" />
@@ -160,7 +191,7 @@ const FeedItem = ({ post, index, onLike, onSave, onComment, onFollow }) => {
           }`}>
             {post.author_role === 'buyer' ? 'Explorer' : post.author_role === 'agent' ? 'Agent' : 'Vendor'}
           </span>
-        </div>
+        </button>
 
         {/* Content */}
         <p className="text-sm mb-3 line-clamp-2">{post.content}</p>
@@ -201,7 +232,7 @@ const FeedItem = ({ post, index, onLike, onSave, onComment, onFollow }) => {
                 </span>
               )}
             </div>
-            <div className="flex items-center gap-2 mt-2">
+            <div className="flex items-center gap-2 mt-3">
               <span className={`inline-block px-3 py-1 rounded-full text-xs font-bold uppercase ${
                 property.listing_type === 'buy' ? 'bg-[#7B9681] text-white' :
                 property.listing_type === 'rent' ? 'bg-[#4A90E2] text-white' :
@@ -210,13 +241,21 @@ const FeedItem = ({ post, index, onLike, onSave, onComment, onFollow }) => {
                 For {property.listing_type === 'buy' ? 'Sale' : property.listing_type}
               </span>
               <span className="text-xs text-gray-400">{property.city}</span>
+              {/* Enquire Button - DM the poster */}
+              <button
+                onClick={handleEnquire}
+                className="ml-auto px-3 py-1.5 bg-white text-gray-800 rounded-full text-xs font-semibold flex items-center gap-1 hover:bg-gray-100 transition-colors"
+                data-testid="enquire-btn"
+              >
+                <Mail className="w-3 h-3" /> Enquire
+              </button>
               {/* Request Viewing Button */}
               <button
                 onClick={() => setShowInquiry(true)}
-                className="ml-auto px-3 py-1 bg-white/20 backdrop-blur-sm rounded-full text-xs font-semibold flex items-center gap-1 hover:bg-white/30 transition-colors"
+                className="px-3 py-1.5 bg-[#7B9681] text-white rounded-full text-xs font-semibold flex items-center gap-1 hover:bg-[#65806B] transition-colors"
                 data-testid="request-viewing-btn"
               >
-                <Send className="w-3 h-3" /> Request Viewing
+                <Send className="w-3 h-3" /> Book Viewing
               </button>
             </div>
           </div>

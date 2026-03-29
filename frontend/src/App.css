@@ -143,3 +143,13 @@ select:focus {
     padding-bottom: env(safe-area-inset-bottom);
   }
 }
+
+/* Hide any external watermarks that overlap with our UI */
+[id*="emergent"], [class*="emergent-watermark"], [class*="made-with"] {
+  z-index: 1 !important;
+}
+
+/* Ensure our navigation is always on top */
+nav[data-testid="bottom-nav"] {
+  z-index: 9999 !important;
+}

@@ -15,7 +15,7 @@ const BottomNav = () => {
   ];
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-100 safe-bottom z-50" data-testid="bottom-nav">
+    <nav className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-100 z-[9999]" style={{ paddingBottom: 'env(safe-area-inset-bottom, 0px)' }} data-testid="bottom-nav">
       <div className="flex justify-around items-center h-16 max-w-lg mx-auto">
         {navItems.map((item) => {
           if (item.requireAuth && !isAuthenticated) {

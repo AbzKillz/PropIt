@@ -2,14 +2,14 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { ArrowLeft, Send, Home, BadgeCheck, Crown } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
-import { messagesAPI } from '../services/api';
+import { messagesAPI, usersAPI } from '../services/api';
 import { Input } from './ui/input';
 import { Button } from './ui/button';
 import BottomNav from './BottomNav';
 
 const MessagesPage = () => {
   const navigate = useNavigate();
-  const { conversationId } = useParams();
+  const { conversationId, recipientId } = useParams();
   const { user, isAuthenticated } = useAuth();
   const [conversations, setConversations] = useState([]);
   const [messages, setMessages] = useState([]);
@@ -17,6 +17,7 @@ const MessagesPage = () => {
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
   const [activeConversation, setActiveConversation] = useState(null);
+  const [newRecipient, setNewRecipient] = useState(null);
   const messagesEndRef = useRef(null);
 
   useEffect(() => {
@@ -28,27 +29,48 @@ const MessagesPage = () => {
   }, [isAuthenticated, navigate]);
 
   useEffect(() => {
-    if (conversationId) {
+    if (conversationId && conversationId !== 'new') {
       fetchMessages(conversationId);
+    } else if (recipientId) {
+      // Starting a new conversation
+      fetchRecipientInfo(recipientId);
     }
-  }, [conversationId]);
+  }, [conversationId, recipientId]);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
+  const fetchRecipientInfo = async (userId) => {
+    try {
+      const { data } = await usersAPI.getProfile(userId);
+      setNewRecipient(data);
+      setActiveConversation({
+        other_user: data,
+        participants: [user._id || user.id, userId],
+        isNew: true
+      });
+    } catch (e) {
+      console.error('Error fetching recipient:', e);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const fetchConversations = async () => {
     try {
       const { data } = await messagesAPI.getConversations();
       setConversations(data);
-      if (conversationId) {
+      if (conversationId && conversationId !== 'new') {
         const active = data.find(c => c.id === conversationId);
         setActiveConversation(active);
       }
     } catch (e) {
       console.error('Error fetching conversations:', e);
     } finally {
-      setLoading(false);
+      if (!recipientId) {
+        setLoading(false);
+      }
     }
   };
 
@@ -67,13 +89,24 @@ const MessagesPage = () => {
 
     setSending(true);
     try {
-      const recipientId = activeConversation.participants.find(p => p !== user._id && p !== user.id);
+      // Get recipient ID - either from existing conversation or new recipient
+      const recipientIdToUse = newRecipient 
+        ? (newRecipient._id || newRecipient.id)
+        : activeConversation.participants.find(p => p !== user._id && p !== user.id);
+      
       const { data } = await messagesAPI.send({
-        recipient_id: recipientId,
+        recipient_id: recipientIdToUse,
         content: newMessage.trim()
       });
       setMessages(prev => [...prev, data]);
       setNewMessage('');
+      
+      // If it was a new conversation, clear the new flag
+      if (activeConversation.isNew) {
+        setActiveConversation(prev => ({ ...prev, isNew: false }));
+        // Refresh conversations to get the new one
+        fetchConversations();
+      }
     } catch (e) {
       console.error('Error sending message:', e);
     } finally {
@@ -104,7 +137,7 @@ const MessagesPage = () => {
   };
 
   // Conversation List View
-  if (!conversationId) {
+  if (!conversationId && !recipientId) {
     return (
       <div className="min-h-screen bg-[#F7F9F7] pb-20" data-testid="messages-page">
         <div className="bg-white sticky top-0 z-10 p-4 border-b">
