@@ -1,0 +1,151 @@
+{
+  "theme": "Light",
+  "archetype": "Organic & Earthy",
+  "brand_identity": {
+    "name": "PropGram",
+    "description": "A social real estate platform blending Rightmove's marketplace with Instagram's immersive media feed. Mobile-first, community-driven, visual property discovery.",
+    "tone": "Approachable, Trustworthy, Modern, Immersive",
+    "core_concept": "Property viewing should feel like exploring a social feed. Focus on full-screen media, seamless scrolling, and community interaction."
+  },
+  "colors": {
+    "background": {
+      "default": "#FFFFFF",
+      "surface": "#F7F9F7",
+      "surface_elevated": "#FFFFFF",
+      "overlay": "rgba(0,0,0,0.4)"
+    },
+    "text": {
+      "primary": "#1A1F1C",
+      "secondary": "#5C6B61",
+      "muted": "#8FA396",
+      "inverse": "#FFFFFF"
+    },
+    "brand": {
+      "primary": "#7B9681",
+      "primary_hover": "#65806B",
+      "primary_light": "#E5EBE6",
+      "buyer_theme": "#7B9681",
+      "seller_theme": "#C89F82",
+      "pro_accent": "#E5B95C",
+      "verified_badge": "#4A90E2"
+    },
+    "border": {
+      "default": "#E5EBE6",
+      "focus": "#7B9681"
+    }
+  },
+  "typography": {
+    "font_families": {
+      "heading": "'Outfit', sans-serif",
+      "body": "'Manrope', sans-serif",
+      "mono": "'JetBrains Mono', monospace"
+    },
+    "scales": {
+      "h1": "text-4xl sm:text-5xl font-bold tracking-tight leading-tight",
+      "h2": "text-2xl sm:text-3xl font-semibold tracking-tight",
+      "h3": "text-xl font-semibold",
+      "body": "text-base font-normal leading-relaxed",
+      "small": "text-sm font-medium",
+      "tiny": "text-xs font-semibold tracking-wider uppercase"
+    }
+  },
+  "spacing_and_layout": {
+    "container_padding": "p-4 sm:p-6",
+    "section_gap": "gap-8 sm:gap-12",
+    "item_gap": "gap-4",
+    "border_radius": {
+      "small": "rounded-md",
+      "medium": "rounded-xl",
+      "large": "rounded-2xl",
+      "full": "rounded-full"
+    },
+    "shadows": {
+      "sm": "shadow-sm",
+      "md": "shadow-[0_4px_20px_rgba(0,0,0,0.05)]",
+      "lg": "shadow-[0_8px_30px_rgba(0,0,0,0.08)]",
+      "glow": "drop-shadow-[0_0_12px_rgba(123,150,129,0.3)]"
+    }
+  },
+  "ui_components": {
+    "feed_container": "h-screen w-full snap-y snap-mandatory overflow-y-scroll scrollbar-hide bg-black",
+    "feed_item": "h-screen w-full snap-start relative bg-black",
+    "media_layer": "absolute inset-0 w-full h-full object-cover",
+    "gradient_overlay": "absolute inset-0 bg-gradient-to-b from-black/20 via-transparent to-black/80 pointer-events-none",
+    "right_sidebar_actions": "absolute right-4 bottom-24 flex flex-col gap-6 items-center z-10",
+    "bottom_info_overlay": "absolute bottom-0 left-0 w-full p-4 pt-12 pb-24 text-white z-10",
+    "top_navigation": "absolute top-0 left-0 w-full p-4 flex justify-between items-center z-20 bg-gradient-to-b from-black/40 to-transparent text-white",
+    "buttons": {
+      "primary": "bg-[#7B9681] text-white hover:bg-[#65806B] transition-colors rounded-full px-6 py-3 font-semibold",
+      "secondary": "bg-white text-[#1A1F1C] border border-[#E5EBE6] hover:bg-[#F7F9F7] transition-colors rounded-full px-6 py-3 font-semibold",
+      "icon_action": "w-12 h-12 rounded-full bg-black/20 backdrop-blur-md flex items-center justify-center text-white hover:bg-black/40 transition-colors"
+    },
+    "cards": {
+      "property": "bg-white rounded-2xl border border-[#E5EBE6] overflow-hidden shadow-sm hover:shadow-md transition-shadow",
+      "profile": "bg-white rounded-2xl p-6 border border-[#E5EBE6] flex flex-col items-center"
+    },
+    "badges": {
+      "buyer": "bg-[#E5EBE6] text-[#7B9681] px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider",
+      "seller": "bg-[#F7EFEA] text-[#C89F82] px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider",
+      "pro": "bg-[#FCF5E3] text-[#E5B95C] px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider flex items-center gap-1",
+      "verified": "text-[#4A90E2] w-4 h-4"
+    }
+  },
+  "media": {
+    "images": {
+      "feed_exteriors": [
+        {
+          "url": "https://images.pexels.com/photos/17174768/pexels-photo-17174768.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940",
+          "description": "Modern luxury villa exterior"
+        },
+        {
+          "url": "https://images.pexels.com/photos/18435276/pexels-photo-18435276.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940",
+          "description": "Contemporary building exterior"
+        },
+        {
+          "url": "https://images.unsplash.com/photo-1691425700585-c108acad6467?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NjA1MDZ8MHwxfHNlYXJjaHwzfHxtb2Rlcm4lMjBob3VzZSUyMGV4dGVyaW9yfGVufDB8fHx8MTc3NDc5ODQxMHww&ixlib=rb-4.1.0&q=85",
+          "description": "Large white building"
+        }
+      ],
+      "feed_interiors": [
+        {
+          "url": "https://images.pexels.com/photos/6970049/pexels-photo-6970049.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940",
+          "description": "Elegant living room interior"
+        },
+        {
+          "url": "https://images.pexels.com/photos/7511701/pexels-photo-7511701.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940",
+          "description": "Bright modern apartment living room"
+        }
+      ],
+      "profiles": [
+        {
+          "url": "https://images.unsplash.com/photo-1770199105692-9e52ff137cad?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NjA1NTN8MHwxfHNlYXJjaHwyfHxlc3RhdGUlMjBhZ2VudCUyMHByb2Zlc3Npb25hbCUyMHBvcnRyYWl0fGVufDB8fHx8MTc3NDc5ODQxMXww&ixlib=rb-4.1.0&q=85",
+          "description": "Verified estate agent profile picture"
+        }
+      ]
+    }
+  },
+  "motion_and_interactions": {
+    "feed_snap": "Use CSS scroll-snap-type: y mandatory for TikTok-like swiping.",
+    "hover_states": "Buttons use transform -translate-y-[1px] and slight opacity changes.",
+    "transitions": "Use Tailwind's transition-all duration-300 ease-in-out for smooth state changes."
+  },
+  "testing_and_accessibility": {
+    "contrast": "Ensure white text over media has a strong gradient overlay behind it (min black/40 to black/80).",
+    "test_ids": "All buttons, tabs, and feed items MUST use data-testid attributes (e.g., data-testid='feed-like-button')."
+  },
+  "icons": {
+    "library": "lucide-react",
+    "usage": "Use thick, filled-style equivalents or standard Lucide icons with strokeWidth={2.5} for the right sidebar to pop against media backgrounds."
+  },
+  "instructions_to_main_agent": [
+    "Build a mobile-first UI replicating Instagram Reels/TikTok. The main route should be a full-screen vertical scrolling feed of properties.",
+    "Do NOT build a traditional 'grid-based' real estate app as the main view. The grid is only for the profile tab or search results.",
+    "The core layout must be an absolute positioned wrapper with a snap-y container.",
+    "Implement top navigation tabs: 'Following', 'For You', 'Area Search'.",
+    "Implement bottom navigation bar (Home, Search, Post/Upload (+), Activity, Profile).",
+    "On the right side of the feed item, place the action sidebar: Agent Avatar (+ Follow), Like (heart), Comment, Share, Save (bookmark).",
+    "On the bottom left of the feed item, show: Property Title, Price, small description, and 'Verified Agent' badge.",
+    "User accounts should visually indicate if they are a Buyer (Mute Green) or Seller (Muted Beige/Sand) through profile headers or badges.",
+    "Add a mock 'Pro' subscription badge to highlight priority posts (Yellow/Gold accent)."
+  ]
+}
