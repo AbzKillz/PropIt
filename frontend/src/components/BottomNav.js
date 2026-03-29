@@ -1,6 +1,6 @@
 import React from 'react';
 import { NavLink } from 'react-router-dom';
-import { Home, Search, PlusSquare, Bell, User } from 'lucide-react';
+import { Home, Search, PlusSquare, MapPin, User } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
 const BottomNav = () => {
@@ -10,7 +10,7 @@ const BottomNav = () => {
     { path: '/', icon: Home, label: 'Home' },
     { path: '/search', icon: Search, label: 'Search' },
     { path: '/create', icon: PlusSquare, label: 'Post', requireAuth: true },
-    { path: '/activity', icon: Bell, label: 'Activity', requireAuth: true },
+    { path: '/places', icon: MapPin, label: 'Places' },
     { path: isAuthenticated ? '/profile' : '/login', icon: User, label: 'Profile' }
   ];
 

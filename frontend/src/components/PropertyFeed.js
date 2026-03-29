@@ -1,8 +1,9 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { Heart, MessageCircle, Share2, Bookmark, Plus, BadgeCheck, Crown, MapPin, Bed, Bath, Square } from 'lucide-react';
-import { postsAPI, propertiesAPI } from '../services/api';
+import { Heart, MessageCircle, Share2, Bookmark, Plus, BadgeCheck, Crown, MapPin, Bed, Bath, Square, Send } from 'lucide-react';
+import { postsAPI, wishlistAPI } from '../services/api';
 import { useAuth } from '../context/AuthContext';
 import CommentsSheet from './CommentsSheet';
+import PropertyInquiryModal from './PropertyInquiryModal';
 
 const SAMPLE_IMAGES = [
   "https://images.pexels.com/photos/17174768/pexels-photo-17174768.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940",
@@ -26,8 +27,10 @@ const FeedItem = ({ post, index, onLike, onSave, onComment, onFollow }) => {
   const { user, isAuthenticated } = useAuth();
   const [liked, setLiked] = useState(false);
   const [saved, setSaved] = useState(false);
+  const [wishlisted, setWishlisted] = useState(false);
   const [likesCount, setLikesCount] = useState(post.likes || 0);
   const [showComments, setShowComments] = useState(false);
+  const [showInquiry, setShowInquiry] = useState(false);
   
   useEffect(() => {
     if (user && post.liked_by) {
@@ -207,6 +210,14 @@ const FeedItem = ({ post, index, onLike, onSave, onComment, onFollow }) => {
                 For {property.listing_type === 'buy' ? 'Sale' : property.listing_type}
               </span>
               <span className="text-xs text-gray-400">{property.city}</span>
+              {/* Request Viewing Button */}
+              <button
+                onClick={() => setShowInquiry(true)}
+                className="ml-auto px-3 py-1 bg-white/20 backdrop-blur-sm rounded-full text-xs font-semibold flex items-center gap-1 hover:bg-white/30 transition-colors"
+                data-testid="request-viewing-btn"
+              >
+                <Send className="w-3 h-3" /> Request Viewing
+              </button>
             </div>
           </div>
         )}
@@ -227,6 +238,15 @@ const FeedItem = ({ post, index, onLike, onSave, onComment, onFollow }) => {
         onClose={() => setShowComments(false)} 
         postId={post.id} 
       />
+
+      {/* Property Inquiry Modal */}
+      {property && (
+        <PropertyInquiryModal
+          isOpen={showInquiry}
+          onClose={() => setShowInquiry(false)}
+          property={property}
+        />
+      )}
     </div>
   );
 };

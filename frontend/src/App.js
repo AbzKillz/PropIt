@@ -12,6 +12,8 @@ import CreatePage from "./components/CreatePage";
 import ProfilePage from "./components/ProfilePage";
 import ActivityPage from "./components/ActivityPage";
 import ProPage from "./components/ProPage";
+import MessagesPage from "./components/MessagesPage";
+import PlacesFeedPage from "./components/PlacesFeedPage";
 import BottomNav from "./components/BottomNav";
 
 // Protected Route Component
@@ -93,6 +95,26 @@ function AppRoutes() {
         <ProtectedRoute>
           <ProPage />
         </ProtectedRoute>
+      } />
+
+      {/* Messages */}
+      <Route path="/messages" element={
+        <ProtectedRoute>
+          <MessagesPage />
+        </ProtectedRoute>
+      } />
+      
+      <Route path="/messages/:conversationId" element={
+        <ProtectedRoute>
+          <MessagesPage />
+        </ProtectedRoute>
+      } />
+
+      {/* Places Stayed Feed */}
+      <Route path="/places" element={
+        <LayoutWithNav>
+          <PlacesFeedPage />
+        </LayoutWithNav>
       } />
       
       {/* Fallback */}

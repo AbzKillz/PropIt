@@ -184,6 +184,33 @@ class AreaCreate(BaseModel):
     postcode: str
     description: Optional[str] = ""
 
+# New Models for Messaging, Stories, Wishlists, Places Stayed
+class MessageCreate(BaseModel):
+    recipient_id: str
+    content: str
+    property_id: Optional[str] = None  # For property inquiries
+
+class StoryCreate(BaseModel):
+    media_url: str
+    caption: Optional[str] = ""
+    property_id: Optional[str] = None
+    location: Optional[str] = ""
+
+class PlaceStayedCreate(BaseModel):
+    property_name: str
+    location: str
+    stay_date: str  # ISO date string
+    rating: int = Field(ge=1, le=5)
+    review: str
+    photos: List[str] = []
+    property_type: str = "rental"  # rental, airbnb, hotel, hostel
+    would_recommend: bool = True
+
+class InquiryCreate(BaseModel):
+    property_id: str
+    message: str
+    contact_preference: str = "message"  # message, email, phone
+
 # Create the main app
 app = FastAPI(title="PropGram API")
 
@@ -786,6 +813,364 @@ async def stripe_webhook(request: Request):
         logger.error(f"Webhook error: {e}")
         return {"received": True}
 
+# ========== MESSAGING ROUTES ==========
+@api_router.post("/messages")
+async def send_message(message_data: MessageCreate, request: Request):
+    user = await get_current_user(request)
+    
+    # Check recipient exists
+    recipient = await db.users.find_one({"_id": ObjectId(message_data.recipient_id)})
+    if not recipient:
+        raise HTTPException(status_code=404, detail="Recipient not found")
+    
+    # Create or get conversation
+    conversation = await db.conversations.find_one({
+        "$or": [
+            {"participants": [user["_id"], message_data.recipient_id]},
+            {"participants": [message_data.recipient_id, user["_id"]]}
+        ]
+    })
+    
+    if not conversation:
+        conv_doc = {
+            "id": str(uuid.uuid4()),
+            "participants": [user["_id"], message_data.recipient_id],
+            "last_message": message_data.content[:100],
+            "last_message_at": datetime.now(timezone.utc).isoformat(),
+            "created_at": datetime.now(timezone.utc).isoformat()
+        }
+        await db.conversations.insert_one(conv_doc)
+        conversation_id = conv_doc["id"]
+    else:
+        conversation_id = conversation["id"]
+        await db.conversations.update_one(
+            {"id": conversation_id},
+            {"$set": {"last_message": message_data.content[:100], "last_message_at": datetime.now(timezone.utc).isoformat()}}
+        )
+    
+    message_doc = {
+        "id": str(uuid.uuid4()),
+        "conversation_id": conversation_id,
+        "sender_id": user["_id"],
+        "sender_name": user["name"],
+        "sender_role": user["role"],
+        "recipient_id": message_data.recipient_id,
+        "content": message_data.content,
+        "property_id": message_data.property_id,
+        "read": False,
+        "created_at": datetime.now(timezone.utc).isoformat()
+    }
+    
+    await db.messages.insert_one(message_doc)
+    message_doc.pop("_id", None)
+    
+    # If property inquiry, also create inquiry record
+    if message_data.property_id:
+        property_doc = await db.properties.find_one({"id": message_data.property_id})
+        if property_doc:
+            inquiry_doc = {
+                "id": str(uuid.uuid4()),
+                "property_id": message_data.property_id,
+                "property_title": property_doc.get("title", ""),
+                "inquirer_id": user["_id"],
+                "inquirer_name": user["name"],
+                "owner_id": property_doc.get("owner_id"),
+                "message": message_data.content,
+                "status": "pending",
+                "created_at": datetime.now(timezone.utc).isoformat()
+            }
+            await db.inquiries.insert_one(inquiry_doc)
+    
+    return message_doc
+
+@api_router.get("/messages/conversations")
+async def get_conversations(request: Request):
+    user = await get_current_user(request)
+    
+    conversations = await db.conversations.find(
+        {"participants": user["_id"]},
+        {"_id": 0}
+    ).sort("last_message_at", -1).to_list(50)
+    
+    # Enrich with participant info
+    for conv in conversations:
+        other_id = [p for p in conv["participants"] if p != user["_id"]][0]
+        other_user = await db.users.find_one({"_id": ObjectId(other_id)}, {"password_hash": 0, "_id": 0})
+        if other_user:
+            conv["other_user"] = other_user
+        
+        # Get unread count
+        unread = await db.messages.count_documents({
+            "conversation_id": conv["id"],
+            "recipient_id": user["_id"],
+            "read": False
+        })
+        conv["unread_count"] = unread
+    
+    return conversations
+
+@api_router.get("/messages/{conversation_id}")
+async def get_messages(conversation_id: str, request: Request, skip: int = 0, limit: int = 50):
+    user = await get_current_user(request)
+    
+    # Verify user is part of conversation
+    conversation = await db.conversations.find_one({"id": conversation_id, "participants": user["_id"]})
+    if not conversation:
+        raise HTTPException(status_code=404, detail="Conversation not found")
+    
+    messages = await db.messages.find(
+        {"conversation_id": conversation_id},
+        {"_id": 0}
+    ).sort("created_at", -1).skip(skip).limit(limit).to_list(limit)
+    
+    # Mark as read
+    await db.messages.update_many(
+        {"conversation_id": conversation_id, "recipient_id": user["_id"], "read": False},
+        {"$set": {"read": True}}
+    )
+    
+    return messages
+
+# ========== INQUIRY ROUTES ==========
+@api_router.post("/inquiries")
+async def create_inquiry(inquiry_data: InquiryCreate, request: Request):
+    user = await get_current_user(request)
+    
+    property_doc = await db.properties.find_one({"id": inquiry_data.property_id})
+    if not property_doc:
+        raise HTTPException(status_code=404, detail="Property not found")
+    
+    inquiry_doc = {
+        "id": str(uuid.uuid4()),
+        "property_id": inquiry_data.property_id,
+        "property_title": property_doc.get("title", ""),
+        "inquirer_id": user["_id"],
+        "inquirer_name": user["name"],
+        "inquirer_email": user["email"],
+        "owner_id": property_doc.get("owner_id"),
+        "message": inquiry_data.message,
+        "contact_preference": inquiry_data.contact_preference,
+        "status": "pending",
+        "created_at": datetime.now(timezone.utc).isoformat()
+    }
+    
+    await db.inquiries.insert_one(inquiry_doc)
+    inquiry_doc.pop("_id", None)
+    
+    # Send message to property owner
+    message_doc = {
+        "id": str(uuid.uuid4()),
+        "conversation_id": None,
+        "sender_id": user["_id"],
+        "sender_name": user["name"],
+        "sender_role": user["role"],
+        "recipient_id": property_doc.get("owner_id"),
+        "content": f"🏠 Property Inquiry: {property_doc.get('title')}\n\n{inquiry_data.message}",
+        "property_id": inquiry_data.property_id,
+        "read": False,
+        "created_at": datetime.now(timezone.utc).isoformat()
+    }
+    await db.messages.insert_one(message_doc)
+    
+    return inquiry_doc
+
+@api_router.get("/inquiries")
+async def get_inquiries(request: Request):
+    user = await get_current_user(request)
+    
+    # Get inquiries for user's properties (if seller/agent) or sent by user (if buyer)
+    if user["role"] in ["seller", "agent"]:
+        inquiries = await db.inquiries.find(
+            {"owner_id": user["_id"]},
+            {"_id": 0}
+        ).sort("created_at", -1).to_list(100)
+    else:
+        inquiries = await db.inquiries.find(
+            {"inquirer_id": user["_id"]},
+            {"_id": 0}
+        ).sort("created_at", -1).to_list(100)
+    
+    return inquiries
+
+# ========== STORIES ROUTES ==========
+@api_router.post("/stories")
+async def create_story(story_data: StoryCreate, request: Request):
+    user = await get_current_user(request)
+    
+    story_doc = {
+        "id": str(uuid.uuid4()),
+        "media_url": story_data.media_url,
+        "caption": story_data.caption,
+        "property_id": story_data.property_id,
+        "location": story_data.location,
+        "author_id": user["_id"],
+        "author_name": user["name"],
+        "author_role": user["role"],
+        "author_image": user.get("profile_image", ""),
+        "is_pro": user.get("is_pro", False),
+        "views": 0,
+        "viewers": [],
+        "expires_at": (datetime.now(timezone.utc) + timedelta(hours=24)).isoformat(),
+        "created_at": datetime.now(timezone.utc).isoformat()
+    }
+    
+    await db.stories.insert_one(story_doc)
+    story_doc.pop("_id", None)
+    return story_doc
+
+@api_router.get("/stories")
+async def get_stories(request: Request):
+    user = await get_optional_user(request)
+    
+    # Get active stories (not expired)
+    now = datetime.now(timezone.utc).isoformat()
+    stories = await db.stories.find(
+        {"expires_at": {"$gt": now}},
+        {"_id": 0}
+    ).sort("created_at", -1).to_list(50)
+    
+    # Group by author
+    authors = {}
+    for story in stories:
+        author_id = story["author_id"]
+        if author_id not in authors:
+            authors[author_id] = {
+                "author_id": author_id,
+                "author_name": story["author_name"],
+                "author_role": story["author_role"],
+                "author_image": story.get("author_image", ""),
+                "is_pro": story.get("is_pro", False),
+                "stories": [],
+                "has_unseen": False
+            }
+        authors[author_id]["stories"].append(story)
+        if user and user["_id"] not in story.get("viewers", []):
+            authors[author_id]["has_unseen"] = True
+    
+    return list(authors.values())
+
+@api_router.post("/stories/{story_id}/view")
+async def view_story(story_id: str, request: Request):
+    user = await get_current_user(request)
+    
+    await db.stories.update_one(
+        {"id": story_id},
+        {"$addToSet": {"viewers": user["_id"]}, "$inc": {"views": 1}}
+    )
+    
+    return {"viewed": True}
+
+# ========== WISHLIST ROUTES ==========
+@api_router.post("/wishlist/{property_id}")
+async def toggle_wishlist(property_id: str, request: Request):
+    user = await get_current_user(request)
+    
+    property_doc = await db.properties.find_one({"id": property_id})
+    if not property_doc:
+        raise HTTPException(status_code=404, detail="Property not found")
+    
+    existing = await db.wishlist.find_one({"user_id": user["_id"], "property_id": property_id})
+    
+    if existing:
+        await db.wishlist.delete_one({"_id": existing["_id"]})
+        return {"wishlisted": False}
+    else:
+        wishlist_doc = {
+            "id": str(uuid.uuid4()),
+            "user_id": user["_id"],
+            "property_id": property_id,
+            "property_title": property_doc.get("title", ""),
+            "property_price": property_doc.get("price", 0),
+            "property_city": property_doc.get("city", ""),
+            "property_image": property_doc.get("images", [""])[0] if property_doc.get("images") else "",
+            "listing_type": property_doc.get("listing_type", ""),
+            "created_at": datetime.now(timezone.utc).isoformat()
+        }
+        await db.wishlist.insert_one(wishlist_doc)
+        return {"wishlisted": True}
+
+@api_router.get("/wishlist")
+async def get_wishlist(request: Request):
+    user = await get_current_user(request)
+    
+    wishlist = await db.wishlist.find(
+        {"user_id": user["_id"]},
+        {"_id": 0}
+    ).sort("created_at", -1).to_list(100)
+    
+    return wishlist
+
+# ========== PLACES STAYED ROUTES ==========
+@api_router.post("/places-stayed")
+async def add_place_stayed(place_data: PlaceStayedCreate, request: Request):
+    user = await get_current_user(request)
+    
+    place_doc = {
+        "id": str(uuid.uuid4()),
+        "user_id": user["_id"],
+        "user_name": user["name"],
+        "user_role": user["role"],
+        "property_name": place_data.property_name,
+        "location": place_data.location,
+        "stay_date": place_data.stay_date,
+        "rating": place_data.rating,
+        "review": place_data.review,
+        "photos": place_data.photos,
+        "property_type": place_data.property_type,
+        "would_recommend": place_data.would_recommend,
+        "likes": 0,
+        "created_at": datetime.now(timezone.utc).isoformat()
+    }
+    
+    await db.places_stayed.insert_one(place_doc)
+    place_doc.pop("_id", None)
+    return place_doc
+
+@api_router.get("/places-stayed")
+async def get_places_stayed(request: Request, user_id: Optional[str] = None, skip: int = 0, limit: int = 20):
+    query = {}
+    if user_id:
+        query["user_id"] = user_id
+    
+    places = await db.places_stayed.find(query, {"_id": 0}).sort("created_at", -1).skip(skip).limit(limit).to_list(limit)
+    return places
+
+@api_router.get("/places-stayed/feed")
+async def get_places_feed(request: Request, skip: int = 0, limit: int = 20):
+    """Get all places stayed posts for the community feed"""
+    places = await db.places_stayed.find({}, {"_id": 0}).sort("created_at", -1).skip(skip).limit(limit).to_list(limit)
+    
+    # Enrich with user info
+    for place in places:
+        user = await db.users.find_one({"_id": ObjectId(place["user_id"])}, {"password_hash": 0})
+        if user:
+            place["user_image"] = user.get("profile_image", "")
+            place["user_role"] = user.get("role", "buyer")
+    
+    return places
+
+@api_router.post("/places-stayed/{place_id}/like")
+async def like_place_stayed(place_id: str, request: Request):
+    user = await get_current_user(request)
+    
+    place = await db.places_stayed.find_one({"id": place_id})
+    if not place:
+        raise HTTPException(status_code=404, detail="Place not found")
+    
+    liked_by = place.get("liked_by", [])
+    if user["_id"] in liked_by:
+        await db.places_stayed.update_one(
+            {"id": place_id},
+            {"$pull": {"liked_by": user["_id"]}, "$inc": {"likes": -1}}
+        )
+        return {"liked": False}
+    else:
+        await db.places_stayed.update_one(
+            {"id": place_id},
+            {"$addToSet": {"liked_by": user["_id"]}, "$inc": {"likes": 1}}
+        )
+        return {"liked": True}
+
 # ========== HEALTH CHECK ==========
 @api_router.get("/")
 async def root():
@@ -819,6 +1204,12 @@ async def startup():
     await db.properties.create_index([("is_featured", -1), ("created_at", -1)])
     await db.areas.create_index("followers_count")
     await db.follows.create_index([("follower_id", 1), ("following_id", 1)])
+    await db.messages.create_index([("conversation_id", 1), ("created_at", -1)])
+    await db.conversations.create_index("participants")
+    await db.stories.create_index([("expires_at", 1), ("created_at", -1)])
+    await db.wishlist.create_index([("user_id", 1), ("property_id", 1)])
+    await db.places_stayed.create_index([("user_id", 1), ("created_at", -1)])
+    await db.inquiries.create_index([("owner_id", 1), ("created_at", -1)])
     
     # Seed admin
     admin_email = os.environ.get("ADMIN_EMAIL", "admin@propgram.com")

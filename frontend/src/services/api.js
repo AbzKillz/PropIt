@@ -93,6 +93,40 @@ export const filesAPI = {
   getUrl: (path) => `${API}/api/files/${path}`
 };
 
+// ========== MESSAGES ==========
+export const messagesAPI = {
+  send: (data) => api.post('/messages', data),
+  getConversations: () => api.get('/messages/conversations'),
+  getMessages: (conversationId, params) => api.get(`/messages/${conversationId}`, { params })
+};
+
+// ========== INQUIRIES ==========
+export const inquiriesAPI = {
+  create: (data) => api.post('/inquiries', data),
+  getAll: () => api.get('/inquiries')
+};
+
+// ========== STORIES ==========
+export const storiesAPI = {
+  create: (data) => api.post('/stories', data),
+  getAll: () => api.get('/stories'),
+  view: (storyId) => api.post(`/stories/${storyId}/view`)
+};
+
+// ========== WISHLIST ==========
+export const wishlistAPI = {
+  toggle: (propertyId) => api.post(`/wishlist/${propertyId}`),
+  getAll: () => api.get('/wishlist')
+};
+
+// ========== PLACES STAYED ==========
+export const placesStayedAPI = {
+  create: (data) => api.post('/places-stayed', data),
+  getByUser: (userId, params) => api.get('/places-stayed', { params: { user_id: userId, ...params } }),
+  getFeed: (params) => api.get('/places-stayed/feed', { params }),
+  like: (placeId) => api.post(`/places-stayed/${placeId}/like`)
+};
+
 // ========== PAYMENTS ==========
 export const paymentsAPI = {
   createCheckout: (packageId) => api.post('/payments/checkout', null, { 
