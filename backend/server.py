@@ -350,6 +350,7 @@ async def create_property(property_data: PropertyCreate, request: Request):
     }
     
     await db.properties.insert_one(property_doc)
+    property_doc.pop("_id", None)  # Remove MongoDB's _id before returning
     return property_doc
 
 @api_router.get("/properties")
@@ -514,6 +515,7 @@ async def create_comment(comment_data: CommentCreate, request: Request):
     
     await db.comments.insert_one(comment_doc)
     await db.posts.update_one({"id": comment_data.post_id}, {"$inc": {"comments_count": 1}})
+    comment_doc.pop("_id", None)  # Remove ObjectId before returning
     return comment_doc
 
 @api_router.get("/comments/{post_id}")
