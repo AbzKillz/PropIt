@@ -99,8 +99,8 @@ const FeedItem = ({ post, index, onLike, onSave, onComment, onFollow }) => {
       <div className="absolute inset-0 gradient-overlay-top h-32" />
       <div className="absolute inset-0 gradient-overlay-bottom" />
       
-      {/* Right Sidebar Actions */}
-      <div className="absolute right-4 bottom-32 flex flex-col gap-5 items-center z-10" data-testid="feed-actions">
+      {/* Right Sidebar Actions - Higher z-index to be above info overlay */}
+      <div className="absolute right-4 bottom-32 flex flex-col gap-5 items-center z-20" data-testid="feed-actions">
         {/* Author Avatar */}
         <div className="relative mb-2">
           <div 
@@ -158,8 +158,8 @@ const FeedItem = ({ post, index, onLike, onSave, onComment, onFollow }) => {
         </button>
       </div>
 
-      {/* Bottom Info Overlay */}
-      <div className="absolute bottom-0 left-0 w-full p-4 pb-28 text-white z-10" data-testid="feed-info">
+      {/* Bottom Info Overlay - Leave space on right for action buttons */}
+      <div className="absolute bottom-0 left-0 w-[calc(100%-80px)] p-4 pb-28 text-white z-10" data-testid="feed-info">
         {/* Author Info - Clickable */}
         <button 
           onClick={handleProfileClick}
