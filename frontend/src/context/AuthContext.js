@@ -40,7 +40,9 @@ export const AuthProvider = ({ children }) => {
         headers: token ? { Authorization: `Bearer ${token}` } : {}
       };
       const { data } = await axios.get(`${API}/api/auth/me`, config);
-      setUser(data);
+      // Ensure _id is set for consistency
+      const userData = { ...data, _id: data.id || data._id };
+      setUser(userData);
     } catch (e) {
       setUser(false);
       localStorage.removeItem('token');
@@ -65,7 +67,9 @@ export const AuthProvider = ({ children }) => {
         localStorage.setItem('token', data.token);
         setToken(data.token);
       }
-      setUser(data);
+      // Ensure _id is set for consistency
+      const userData = { ...data, _id: data.id || data._id };
+      setUser(userData);
       return { success: true };
     } catch (e) {
       return { success: false, error: formatApiError(e.response?.data?.detail) };
@@ -83,7 +87,9 @@ export const AuthProvider = ({ children }) => {
         localStorage.setItem('token', data.token);
         setToken(data.token);
       }
-      setUser(data);
+      // Ensure _id is set for consistency
+      const userDataNormalized = { ...data, _id: data.id || data._id };
+      setUser(userDataNormalized);
       return { success: true };
     } catch (e) {
       return { success: false, error: formatApiError(e.response?.data?.detail) };
